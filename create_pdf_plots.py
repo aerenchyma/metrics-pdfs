@@ -1,11 +1,11 @@
-import apiaccess_2 as gatt 
+import apiaccess as gatt 
 import infofile
 import datetime
 from matplotlib.backends.backend_pdf import PdfPages
 from fpdf import FPDF
 from pyPdf import PdfFileReader, PdfFileWriter
 import os.path
-from pudb import set_trace
+#from pudb import set_trace # for interactive debug
 
 # text definitions
 PAGEVIEWS_DEFN = """
@@ -20,24 +20,25 @@ then open the computer on Wednesday with the page still open and click around on
 this all counts as only one visit.
 """
 
+## functions
 def create_final_filename():
 	today = str(datetime.date.today())
 	pg = infofile.pgpath[11:].replace("/","_")
 	return "%s_%s.pdf" % (pg, today)
 
-#TODO factor out functionality; this code is pretty gross
+#TODO factor out functionality
 def text_page_pdf(info_dict,fname, origfile, tmpfile="tf_1.pdf", tmpfile2="tf_2.pdf", tmpfile3="tf_3.pdf"): # fname is the summary filename -- perhaps rename var TODO
 	
 	#yrlong info object(s)
 	gat2 = gatt.GA_Text_Info(365)
 	info_gat2 = gat2.main()
-	# gatforever = gatt.GA_Text_Info(2920)
-	# info_gatf = gatforever.main()
+	# gatforever = gatt.GA_Text_Info(2920) # still broken
+	# info_gatf = gatforever.main() # still broken
 
 	pdf = FPDF()
 	sec_pdf = FPDF()
 	defns_pdf = FPDF()
-	#set_trace()
+	#set_trace() # for debug
 	pdf.add_page()
 	defns_pdf.add_page()
 	sec_pdf.add_page()
@@ -45,7 +46,7 @@ def text_page_pdf(info_dict,fname, origfile, tmpfile="tf_1.pdf", tmpfile2="tf_2.
 	pdf.set_font('Times','',12) # adjust as appropriate TODO
 	defns_pdf.set_font('Times','',12) # adjust as appropriate TODO
 	x,y = 30,10
-	#pdf.cell(x,y,PAGEVIEWS_DEFN)
+	
 	pdf.cell(x,y, "Over the past %s days:" % (info_dict["Across time span"]))
 	pdf.ln()
 	diff_keys = ["Across time span", "Top Nations", "Top Resources"]
@@ -62,17 +63,8 @@ def text_page_pdf(info_dict,fname, origfile, tmpfile="tf_1.pdf", tmpfile2="tf_2.
 			pdf.ln()
 	pdf.ln() 
 
-	# TODO -- 'ever' -- past-days doesn't seem to work when over a yr, need new special query w/diff start
-	# pdf.cell(x,y,"Since course has been published on Open.Michigan:")
-	# pdf.ln()
-	# for k in info_gatf:
-	# 	if k not in diff_keys:
-	# 		pdf.cell(x,y,"%s: %d" % (k, info_gatf[k]))
-	# 		pdf.ln()
-
-
-# TODO must start new page here; information is being cut off.
-
+	# TODO -- 'ever' -- past-days doesn't work when over a yr
+	# TODO improve formatting
 	if info_dict["Top Nations"][0] == 'United States':
 		sec_pdf.cell(x,y, "Top non-US countries visiting this course over past %s days:" % (info_dict["Across time span"]),0,1) # ALL time right now ## if change, add back to str: % (info_dict["Across time span"])
 		for n in info_dict["Top Nations"][1:]:
@@ -85,7 +77,7 @@ def text_page_pdf(info_dict,fname, origfile, tmpfile="tf_1.pdf", tmpfile2="tf_2.
 			sec_pdf.ln()
 	sec_pdf.ln()
 	sec_pdf.cell(x,y,"Top 10 individual files ever downloaded from this course, and how many times:",0,1) # ALL time right now
-	#pdf.ln()
+
 	for r in info_dict["Top Resources"]:
 		sec_pdf.cell(x,y, "* %s" % r)
 		sec_pdf.ln()
@@ -93,7 +85,6 @@ def text_page_pdf(info_dict,fname, origfile, tmpfile="tf_1.pdf", tmpfile2="tf_2.
 	pdf.output(tmpfile, 'F')
 	sec_pdf.output(tmpfile3,'F')
 
-## defns etc page should have title; TODO. all of course need better formatting
 	visits_list = VISITS_DEFN.split("\n")
 	pageviews_list = PAGEVIEWS_DEFN.split("\n")
 	for l in visits_list:
@@ -122,30 +113,31 @@ def text_page_pdf(info_dict,fname, origfile, tmpfile="tf_1.pdf", tmpfile2="tf_2.
 	outpStream.close()
 
 def main():
-	# course views over time (input eventually for days previous + path to investigate [latter for all, infofile])
+	# course views over time (input eventually for days previous + path to investigate (see infofile)
 	days_back = 30
 	tmp_filename = "incompletesummary.pdf"
 	objs_for_plots = gatt.GoogleAnalyticsData(days_back), gatt.GABulkDownloads(days_back), gatt.GABulkDownloads_Views(days_back), gatt.GABulkDownloads_Views(365)
 	plots = [x.main() for x in objs_for_plots]
-	pp = PdfPages(tmp_filename) # something around here isn't working -- generating pdf without plots. why? TODO
+	pp = PdfPages(tmp_filename) 
 	throwaway = [pp.savefig(x) for x in plots]
 	pp.close()
 
-	# adding page with info ## -- should this be abstracted more? TODO
+	# adding page with info ## -- TODO increased abstraction
 	info_obj = gatt.GA_Text_Info(days_back)
 	info_obj.get_more_info()
 	info = info_obj.main() # returns infodict
 	final_filename = create_final_filename()
-	# TODO automate proper filenames
-	#text_page_pdf(info, "oo_summary_4.pdf", "oo_summary_1.pdf") # no error w/ non-overwrite orig file change
-	text_page_pdf(info, final_filename,tmp_filename) ## needed actually
-	# testing stuff, view in console
-	for k in info:
-		print k, info[k]
+
+	text_page_pdf(info, final_filename,tmp_filename) ## needed for pdf combination
+	# TODO options for singular pages
+
+	## for testing stuff, view in console
+	# for k in info:
+	# 	print k, info[k]
 
 	# return individual download nums
-	#info_obj.indiv_dl_nums()
 
+## not necessary with this structure
 # def save_pdf():
 # 	return None
 
