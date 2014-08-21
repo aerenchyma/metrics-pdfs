@@ -1,7 +1,8 @@
 from bs4 import BeautifulSoup
 import infofile
 import urllib
-import googleanalytics_apiaccess_timeseries_try as gatt 
+#import ga_api_timeseries as gatt
+import apiaccess as gatt 
 
 # correct response?
 def get_material_links(course_mat_pg=infofile.pgpath):
